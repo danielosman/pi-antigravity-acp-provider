@@ -13,6 +13,11 @@ type Effort = "low" | "medium" | "high";
 type Variants = Partial<Record<Effort, string>>;
 
 export const FALLBACK_MODELS: readonly Model<typeof API_ID>[] = [
+	reasoningModel("gemini-4-argon", "Gemini 4 Argon", {
+		low: "gemini-4-argon-low",
+		medium: "gemini-4-argon-medium",
+		high: "gemini-4-argon-high",
+	}),
 	reasoningModel("gemini-3.8-flash", "Gemini 3.8 Flash", {
 		low: "gemini-3.8-flash-low",
 		medium: "gemini-3.8-flash-medium",

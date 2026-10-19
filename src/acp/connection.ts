@@ -20,6 +20,7 @@ import { PromptWatchdog } from "./prompt-watchdog.js";
 import {
 	decodeSessionState,
 	findSessionSelector,
+	selectorValues,
 	type AcpNewSessionResponse,
 	type SessionState,
 } from "./session-state.js";
@@ -224,6 +225,28 @@ export class AntigravityAcpConnection {
 
 	async setModel(sessionId: string, modelId: string, signal?: AbortSignal): Promise<void> {
 		await this.initialize(signal);
+		const initialState = this.getSessionState(sessionId);
+		const modelSelector = findSessionSelector(initialState, "model");
+		const thoughtSelector = findSessionSelector(initialState, "thought_level");
+		const match = modelId.match(/^(.+)-(low|medium|high)$/u);
+		if (
+			modelSelector &&
+			thoughtSelector &&
+			match?.[1] &&
+			match[2] &&
+			selectorValues(modelSelector).some((option) => option.value === match[1])
+		) {
+			const baseModelId = match[1];
+			const effort = match[2];
+			if (modelSelector.currentValue !== baseModelId) {
+				await this.setSelector(sessionId, "model", baseModelId, signal);
+			}
+			const currentThought = findSessionSelector(this.getSessionState(sessionId), "thought_level")?.currentValue;
+			if (currentThought !== effort) {
+				await this.setSelector(sessionId, "thought_level", effort, signal);
+			}
+			return;
+		}
 		if (await this.setSelector(sessionId, "model", modelId, signal)) return;
 		// Older official Antigravity builds still implement this removed draft
 		// method. Use the SDK's supported generic request API, not private internals.
@@ -314,7 +337,7 @@ export class AntigravityAcpConnection {
 
 	private async setSelector(
 		sessionId: string,
-		category: "model" | "mode",
+		category: "model" | "mode" | "thought_level",
 		value: string,
 		signal?: AbortSignal,
 	): Promise<boolean> {
