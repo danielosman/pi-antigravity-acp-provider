@@ -129,6 +129,22 @@ describe("AntigravityAcpConnection", () => {
 		}
 	});
 
+	it("rejects when changing the base model removes the thought_level selector before effort can be confirmed", async () => {
+		const connection = new AntigravityAcpConnection({
+			cwd: path.dirname(fakeAgent),
+			command: process.execPath,
+			args: [fakeAgent, "config-options-disappearing-thought"],
+		});
+		try {
+			const session = await connection.newSession(process.cwd());
+			await expect(connection.setModel(session.sessionId, "gemini-test-low")).rejects.toThrow(
+				"Antigravity did not confirm the requested thought_level selection",
+			);
+		} finally {
+			await connection.close();
+		}
+	});
+
 	it.each(["stream progress", "native work"])("keeps an active %s turn alive beyond the idle budget", async (text) => {
 		const connection = new AntigravityAcpConnection({ cwd: process.cwd(), command: process.execPath,
 			args: [fakeAgent], env: { ...process.env, FAKE_PROGRESS_STEP_MS: "60" }, promptIdleTimeoutMs: 300, promptWorkIdleTimeoutMs: 1500 });

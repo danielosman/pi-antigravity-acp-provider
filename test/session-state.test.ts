@@ -59,6 +59,57 @@ describe("ACP session compatibility", () => {
 	});
 
 	it.each([
+		{
+			label: "base-only legacy models",
+			models: {
+				currentModelId: "gemini-3.8-flash",
+				availableModels: [{ modelId: "gemini-3.8-flash", name: "Gemini 3.8 Flash" }],
+			},
+		},
+		{
+			label: "stale legacy models",
+			models: {
+				currentModelId: "gemini-3.7-flash-low",
+				availableModels: [{ modelId: "gemini-3.7-flash-low", name: "Gemini 3.7 Flash (Low)" }],
+			},
+		},
+	])("ignores $label when split model and thought_level selectors are present", ({ models }) => {
+		const state = decodeSessionState({
+			models,
+			configOptions: [
+				{
+					id: "model",
+					name: "Model",
+					category: "model",
+					type: "select",
+					currentValue: "gemini-3.8-flash",
+					options: [{ value: "gemini-3.8-flash", name: "Gemini 3.8 Flash" }],
+				},
+				{
+					id: "thinking_level",
+					name: "Thinking Level",
+					category: "thought_level",
+					type: "select",
+					currentValue: "medium",
+					options: [
+						{ value: "low", name: "Low" },
+						{ value: "medium", name: "Medium" },
+						{ value: "high", name: "High" },
+					],
+				},
+			],
+		});
+		expect(sessionModels(state)).toEqual({
+			currentModelId: "gemini-3.8-flash-medium",
+			availableModels: [
+				{ modelId: "gemini-3.8-flash-low", name: "Gemini 3.8 Flash (Low)" },
+				{ modelId: "gemini-3.8-flash-medium", name: "Gemini 3.8 Flash (Medium)" },
+				{ modelId: "gemini-3.8-flash-high", name: "Gemini 3.8 Flash (High)" },
+			],
+		});
+	});
+
+	it.each([
 		null,
 		{ models: { currentModelId: "bad", availableModels: [{ modelId: 123, name: "Bad" }] } },
 		{ configOptions: [{ ...modelSelector, currentValue: false }] },

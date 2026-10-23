@@ -293,6 +293,10 @@ function sessionConfigOptions() {
 			options: [{ group: "google", name: "Google", options: [
 				{ value: "auto", name: "Auto" }, { value: "gemini-test", name: "Gemini Test" },
 			] }] },
+		...(scenario === "config-options-disappearing-thought" && model === "auto"
+			? [{ id: "thinking-level-selector", name: "Thinking", category: "thought_level", type: "select",
+				currentValue: "high", options: ["low", "medium", "high"].map((value) => ({ value, name: value })) }]
+			: []),
 		{ id: "permission-selector", name: "Permissions", category: "mode", type: "select", currentValue: mode,
 			options: ["default", "auto_edit", "yolo"].map((value) => ({ value, name: value })) },
 	];

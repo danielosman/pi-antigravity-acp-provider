@@ -243,7 +243,13 @@ export class AntigravityAcpConnection {
 			}
 			const currentThought = findSessionSelector(this.getSessionState(sessionId), "thought_level")?.currentValue;
 			if (currentThought !== effort) {
-				await this.setSelector(sessionId, "thought_level", effort, signal);
+				const thoughtLevelUpdated = await this.setSelector(sessionId, "thought_level", effort, signal);
+				if (!thoughtLevelUpdated) {
+					throw new AntigravityAcpError(
+						"protocol",
+						"Antigravity did not confirm the requested thought_level selection",
+					);
+				}
 			}
 			return;
 		}

@@ -74,17 +74,28 @@ export function sessionModels(state: SessionState): { currentModelId: string; av
 				/-(?:low|medium|high)$/u.test(selector.currentValue) || !thoughtSelector.currentValue
 					? selector.currentValue
 					: `${selector.currentValue}-${thoughtSelector.currentValue}`;
-			const availableModels = state.models?.availableModels?.length
-				? state.models.availableModels
-				: modelOptions.flatMap((modelOpt) =>
-						/-(?:low|medium|high)$/u.test(modelOpt.value)
-							? [{ modelId: modelOpt.value, name: modelOpt.name }]
-							: thoughtOptions.map((thoughtOpt) => ({
-									modelId: `${modelOpt.value}-${thoughtOpt.value}`,
-									name: `${modelOpt.name} (${thoughtOpt.name})`,
-								})),
-					);
-			return { currentModelId, availableModels };
+			// 1. Always synthesize from the live selectors first
+			const synthesized = modelOptions.flatMap((modelOpt) =>
+				/-(?:low|medium|high)$/u.test(modelOpt.value)
+					? [{ modelId: modelOpt.value, name: modelOpt.name }]
+					: thoughtOptions.map((thoughtOpt) => ({
+							modelId: `${modelOpt.value}-${thoughtOpt.value}`,
+							name: `${modelOpt.name} (${thoughtOpt.name})`,
+						})),
+			);
+			const synthesizedIds = new Set(synthesized.map((m) => m.modelId));
+
+			// 2. Only keep legacy `state.models.availableModels` if its IDs match the synthesized IDs
+			const legacy = state.models?.availableModels;
+			const isLegacyCompatible =
+				legacy !== undefined &&
+				legacy.length === synthesizedIds.size &&
+				legacy.every((m) => synthesizedIds.has(m.modelId));
+
+			return {
+				currentModelId,
+				availableModels: isLegacyCompatible ? legacy : synthesized,
+			};
 		}
 	}
 	return {
